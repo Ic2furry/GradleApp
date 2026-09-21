@@ -146,9 +146,8 @@ class BuilderApp(tk.Tk):
         ttk.Label(project_frame, text="Папка проекта:").grid(
             row=0, column=0, sticky="w"
         )
-        ttk.Entry(project_frame, textvariable=self.project_var).grid(
-            row=0, column=1, sticky="ew", padx=8
-        )
+        self.project_entry = ttk.Entry(project_frame, textvariable=self.project_var, style="Custom.TEntry")
+        self.project_entry.grid(row=0, column=1, sticky="ew", padx=8)
         ttk.Button(
             project_frame, text="Обзор...", command=self.choose_project
         ).grid(row=0, column=2)
@@ -166,6 +165,7 @@ class BuilderApp(tk.Tk):
             java_frame,
             textvariable=self.java_var,
             state="readonly",
+            style="Custom.TCombobox",
             width=45,
         )
         self.java_combo.grid(row=0, column=1, sticky="ew", padx=8)
@@ -217,16 +217,18 @@ class BuilderApp(tk.Tk):
         ttk.Label(gradle_frame, text="Доп. аргументы:").grid(
             row=1, column=0, sticky="w", pady=(8, 0)
         )
-        ttk.Entry(
-            gradle_frame, textvariable=self.extra_args_var
-        ).grid(row=1, column=1, sticky="ew", padx=8, pady=(8, 0))
+        self.extra_entry = ttk.Entry(
+            gradle_frame, textvariable=self.extra_args_var, style="Custom.TEntry"
+        )
+        self.extra_entry.grid(row=1, column=1, sticky="ew", padx=8, pady=(8, 0))
 
         ttk.Label(gradle_frame, text="Аргументы Java:").grid(
             row=2, column=0, sticky="w", pady=(8, 0)
         )
-        ttk.Entry(
-            gradle_frame, textvariable=self.java_args_var
-        ).grid(row=2, column=1, sticky="ew", padx=8, pady=(8, 0))
+        self.java_args_entry = ttk.Entry(
+            gradle_frame, textvariable=self.java_args_var, style="Custom.TEntry"
+        )
+        self.java_args_entry.grid(row=2, column=1, sticky="ew", padx=8, pady=(8, 0))
 
         gradle_frame.columnconfigure(1, weight=1)
 
@@ -368,6 +370,11 @@ class BuilderApp(tk.Tk):
     def apply_theme(self, theme: str):
         """Apply a simple light/dark theme to the UI."""
         style = ttk.Style()
+        # Use a theme that allows widget background styling reliably
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
         if theme == "dark":
             bg = "#252525"
             frame_bg = "#2b2b2b"
@@ -390,10 +397,24 @@ class BuilderApp(tk.Tk):
         try:
             style.configure("TFrame", background=frame_bg)
             style.configure("TLabel", background=frame_bg, foreground=fg)
-            style.configure("TLabelFrame", background=frame_bg, foreground=fg)
-            style.configure("TEntry", fieldbackground=entry_bg, foreground=fg)
-            style.configure("TCombobox", fieldbackground=entry_bg, foreground=fg)
-            style.configure("TButton", background=frame_bg, foreground=fg)
+            # LabelFrame styling uses two style names
+            style.configure("TLabelframe", background=frame_bg)
+            style.configure("TLabelframe.Label", background=frame_bg, foreground=fg)
+            # Entry / Combobox field backgrounds
+            style.configure("Custom.TEntry", fieldbackground=entry_bg, foreground=fg)
+            style.configure("Custom.TCombobox", fieldbackground=entry_bg, foreground=fg, background=entry_bg)
+            # Ensure readonly state uses same fieldbackground
+            style.map("Custom.TCombobox",
+                      fieldbackground=[('readonly', entry_bg), ('!readonly', entry_bg)])
+            style.map("Custom.TEntry",
+                      fieldbackground=[('readonly', entry_bg), ('!readonly', entry_bg)])
+            # Buttons: keep them visually distinct
+            style.configure("TButton", foreground=fg)
+            style.map("TButton",
+                      background=[('active', frame_bg), ('!active', frame_bg)])
+            # Scrollbars
+            style.configure("Vertical.TScrollbar", background=frame_bg)
+            style.configure("Horizontal.TScrollbar", background=frame_bg)
         except Exception:
             pass
 
